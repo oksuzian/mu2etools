@@ -12,9 +12,6 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/oksuzian/mu2etools',
-    project_urls = {
-        "Bug Tracker": https://github.com/oksuzian/mu2etools/issues"
-    },
     license='MIT',
     packages=['mu2etools'],
     install_requires=['requests'],
