@@ -21,7 +21,7 @@ def getNormBackground(df, cuts, scale):
     err_lo = math.sqrt(raw_count_lo)/LIVETIME_LO*LIVETIME_MU2E/scale
     err = math.sqrt(err_hi**2 + err_lo**2)
 
-        return (ave, err, ave_hi, ave_lo, err_hi, err_lo)
+    return (ave, err, ave_hi, ave_lo, err_hi, err_lo)
   
 def pritnLiveTimes(self):
     print("LIVETIME_MU2E: %e" % LIVETIME_MU2E)
