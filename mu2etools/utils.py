@@ -23,7 +23,7 @@ def getNormBackground(df, cuts, scale):
 
     return (ave, err, ave_hi, ave_lo, err_hi, err_lo)
   
-def pritnLiveTimes(self):
+def pritnLiveTimes():
     print("LIVETIME_MU2E: %e" % LIVETIME_MU2E)
     print("LIVETIME_HI: %e" % LIVETIME_HI)
     print("LIVETIME_LO: %e" % LIVETIME_LO)
