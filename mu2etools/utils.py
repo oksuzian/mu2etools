@@ -58,7 +58,7 @@ def getVarList(list_name):
             'deent_td': [0, 10],
             'deent_z0': [-500,500]}
 
-   if list_name=="noCRV":
+    if list_name=="noCRV":
             list = {'de_nhits': [-2, 100],
             'ue_nhits': [-2, 100],
             'dequal_TrkPID': [-1.1, 1.1],
