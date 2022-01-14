@@ -6,7 +6,8 @@ import pandas
   
 LIVETIME_LO=1.36E8+5.09E7
 LIVETIME_HI=5.49E6 
-LIVETIME_MU2E=3.46E6  
+LIVETIME_MU2E=3.46E6
+LYIELD_SCALE=0.001726
 
 def getNormBackground(df, cuts, scale):
     # scale - to account for a larger momentum window
