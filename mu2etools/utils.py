@@ -9,6 +9,33 @@ LIVETIME_HI=5.49E6
 LIVETIME_MU2E=3.46E6
 LYIELD_SCALE=0.001726
 
+
+CRV_SECTOR_NAMES = {
+                       "R1",  "//0   CRV-R modules first three modules at TS"
+                       "R2",  "//1   CRV-R modules upstream of cryo hole (except first three modules at TS)"
+                       "R3",  "//2   CRV-R module above cryo hole"
+                       "R4",  "//3   CRV-R module below cryo hole"
+                       "R5",  "//4   CRV-R modules downstream of cryo hole (except endcap)"
+                       "R6",  "//5   CRV-R modules at endcap"
+                       "L1",  "//6   CRV-L modules (except endcap)"
+                       "L2",  "//7   CRV-L modules at endcap"
+                       "T1",  "//8   CRV-TS modules (three upstream modules)"
+                       "T2",  "//9   CRV-TS modules (two downstream modules)"  
+                       "T3",  "//10   CRV-T modules (four upstream modules)"
+                       "T4",  "//11  CRV-T modules (remaining 16 downstream modules)"
+                       "E1",  "//12  CRV-TS-Extension upstream module"
+                       "E2",  "//13  CRV-TS-Extension downstream module"
+                       "U",   "//14  CRV-U modules"
+                       "D1",  "//15  CRV-D modules above beam pipe"
+                       "D2",  "//16  CRV-D module at -x of beam pipe"
+                       "D3",  "//17  CRV-D module at +x of beam beam pipe"
+                       "D4",  "//18  CRV-D module below beam pipe"
+                       "C1",  "//19  CRV-Cryo-Inner module upstream of cryo hole"
+                       "C2",  "//20  CRV-Cryo-Inner module downstream of cryo hole"
+                       "C3",  "//21  CRV-Cryo-Outer module above of cryo hole"
+                       "C4"   "//22  CRV-Cryo-Outer module downstream of cryo hole"
+                      }
+
 def getNormBackground(df, cuts, scale):
     # scale - to account for a larger momentum window
     raw_count_hi = len(df.query('is_high==1 & %s' % cuts))
