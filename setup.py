@@ -14,5 +14,4 @@ setuptools.setup(
     url='https://github.com/oksuzian/mu2etools',
     license='MIT',
     packages=['mu2etools'],
-    install_requires=['requests'],
 )
