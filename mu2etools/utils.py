@@ -10,7 +10,7 @@ LIVETIME_MU2E=3.46E6
 LYIELD_SCALE=0.001726
 
 
-CRV_SECTOR_NAMES = {
+CRV_SECTOR_NAMES_V8 = {
                        "R1":  "//0   CRV-R modules first three modules at TS",
                        "R2":  "//1   CRV-R modules upstream of cryo hole (except first three modules at TS)",
                        "R3":  "//2   CRV-R module above cryo hole",
@@ -33,7 +33,33 @@ CRV_SECTOR_NAMES = {
                        "C1":  "//19  CRV-Cryo-Inner module upstream of cryo hole",
                        "C2":  "//20  CRV-Cryo-Inner module downstream of cryo hole",
                        "C3":  "//21  CRV-Cryo-Outer module above of cryo hole",
-                       "C4":   "//22  CRV-Cryo-Outer module downstream of cryo hole",
+                       "C4":   "//22  CRV-Cryo-Outer module downstream of cryo hole"
+                      }
+
+
+CRV_SECTOR_NAMES_V7 = {
+                       "R1":  "0   CRV-R modules upstream of cryo hole", 
+                       "R2":  "1   CRV-R module above cryo hole", 
+                       "R3":  "2   CRV-R module below cryo hole", 
+                       "R4":  "3   CRV-R modules downstream of cryo hole (except endcap)", 
+                       "R5":  "4   CRV-R modules at endcap", 
+                       "L1":  "5   CRV-L modules (except endcap)", 
+                       "L2":  "6   CRV-L modules at endcap", 
+                       "T1":  "7   CRV-TS modules (three upstream modules)", 
+                       "T2":  "8   CRV-TS modules (two downstream modules)", 
+                       "T3":  "9   CRV-T modules (four upstream modules)", 
+                       "T4":  "10  CRV-T modules (remaining 16 downstream modules)", 
+                       "E1":  "11  CRV-TS-Extension upstream module", 
+                       "E2":  "12  CRV-TS-Extension downstream module", 
+                       "U":   "13  CRV-U modules", 
+                       "D1":  "14  CRV-D modules above beam pipe", 
+                       "D2":  "15  CRV-D module at -x of beam pipe", 
+                       "D3":  "16  CRV-D module at +x of beam beam pipe", 
+                       "D4":  "17  CRV-D module below beam pipe", 
+                       "C1":  "18  CRV-Cryo-Inner module upstream of cryo hole", 
+                       "C2":  "19  CRV-Cryo-Inner module downstream of cryo hole", 
+                       "C3":  "20  CRV-Cryo-Outer module above of cryo hole", 
+                       "C4":  "21  CRV-Cryo-Outer module downstream of cryo hole"
                       }
 
 def getNormBackground(df, cuts, scale):
