@@ -111,11 +111,9 @@ def getVarList(list_name):
             'dequal_TrkQual': [-0.1, 1.1],
             'deent_td': [0, 10],
             'deent_d0': [-500,500],
-            'deent_om': [-0.01, 0.05],
-            'crvinfo__PEs': [-1, 1000],
-            'crvinfo__dT': [-500, 500],
-            'deent_mom': [50, 200],
-            'deent_d0_om' : [300, 1200]}
+            'crvinfo_PEs': [-1, 1000],
+            'crvinfo_dT': [-500, 500],
+            'deent_mom': [50, 200]}
 
     if list_name=="withCRV":
             list = {'crvinfo__z': [-5000, 20000],
