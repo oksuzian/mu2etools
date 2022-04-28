@@ -100,6 +100,22 @@ def getVarList(list_name):
             'crvinfo__dT': [-500, 500],
             'deent_mom': [50, 200],
             'deent_d0_om' : [300, 1200]}
+        
+    if list_name=="allCRY5":
+            list = {'crvinfo_x': [-8000, 1000], 
+            'crvinfo_y': [0, 3500],
+            'crvinfo_z': [-5000, 20000],
+            'de_nhits': [-2, 100],
+            'ue_nhits': [-2, 100],
+            'dequal_TrkPID': [-1.1, 1.1],
+            'dequal_TrkQual': [-0.1, 1.1],
+            'deent_td': [0, 10],
+            'deent_d0': [-500,500],
+            'deent_om': [-0.01, 0.05],
+            'crvinfo__PEs': [-1, 1000],
+            'crvinfo__dT': [-500, 500],
+            'deent_mom': [50, 200],
+            'deent_d0_om' : [300, 1200]}
 
     if list_name=="withCRV":
             list = {'crvinfo__z': [-5000, 20000],
