@@ -9,6 +9,9 @@ LIVETIME_HI=5.49E6
 LIVETIME_MU2E=3.46E6
 LYIELD_SCALE=0.001726
 
+LIVETIME_LO_CRY5 = 3.38E7
+LIVETIME_HI_CRY5 = 5.85E5
+
 
 CRV_SECTOR_NAMES_V8 = {
                        "R1":  "//0   CRV-R modules first three modules at TS",
