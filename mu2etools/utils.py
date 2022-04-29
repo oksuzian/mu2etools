@@ -65,17 +65,17 @@ CRV_SECTOR_NAMES_V7 = {
                        "C4":  "21  CRV-Cryo-Outer module downstream of cryo hole"
                       }
 
-def getNormBackground(df, cuts, scale):
+def getNormBackground(df, cuts, scale, lotime=LIVETIME_LO, hitime=LIVETIME_HI):
     # scale - to account for a larger momentum window
     raw_count_hi = len(df.query('is_high==1 & %s' % cuts))
     raw_count_lo = len(df.query('is_high==0 & %s' % cuts))
 
-    ave_hi = raw_count_hi/LIVETIME_HI*LIVETIME_MU2E/scale
-    ave_lo = raw_count_lo/LIVETIME_LO*LIVETIME_MU2E/scale
+    ave_hi = raw_count_hi/hitime*LIVETIME_MU2E/scale
+    ave_lo = raw_count_lo/lotime*LIVETIME_MU2E/scale
     ave = ave_hi + ave_lo
   
-    err_hi = math.sqrt(raw_count_hi)/LIVETIME_HI*LIVETIME_MU2E/scale
-    err_lo = math.sqrt(raw_count_lo)/LIVETIME_LO*LIVETIME_MU2E/scale
+    err_hi = math.sqrt(raw_count_hi)/hitime*LIVETIME_MU2E/scale
+    err_lo = math.sqrt(raw_count_lo)/lotime*LIVETIME_MU2E/scale
     err = math.sqrt(err_hi**2 + err_lo**2)
 
     return (ave, err, ave_hi, ave_lo, err_hi, err_lo)
