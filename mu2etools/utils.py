@@ -108,14 +108,14 @@ def getVarList(list_name):
             list = {'crvinfo_x': [-8000, 1000], 
             'crvinfo_y': [0, 3500],
             'crvinfo_z': [-5000, 20000],
-            'de_nhits': [-2, 100],
-            'ue_nhits': [-2, 100],
+            'de_nhits': [0, 100],
+            'ue_nhits': [0, 100],
             'dequal_TrkPID': [-1.1, 1.1],
             'dequal_TrkQual': [-0.1, 1.1],
-            'deent_td': [0, 10],
+            'deent_td': [0, 3],
             'deent_d0': [-500,500],
             'crvinfo_PEs': [-1, 1000],
-            'crvinfo_dT': [-500, 500],
+            'crvinfo_dT': [-200, 100],
             'deent_mom': [50, 200]}
 
     if list_name=="withCRV":
