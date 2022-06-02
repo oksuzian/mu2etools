@@ -115,7 +115,7 @@ def getVarList(list_name):
             'deent_td': [0, 3],
             'deent_d0': [-500,500],
             'crvinfo_PEs': [-1, 1000],
-            'crvinfo_dT': [-200, 100],
+            'crvinfo_dTs': [-200, 100],
             'deent_mom': [50, 200]}
 
     if list_name=="withCRV":
