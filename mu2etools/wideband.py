@@ -13,16 +13,13 @@ class DataProcessor:
 
     def getData(self, defname):
 
-        # Execute the shell script with the argument
-        filelist = subprocess.check_output(['./getDataset.sh', defname], universal_newlines=True)
-        filelist = filelist.splitlines()
-
         # Define bad runs
         badruns = [str(x).zfill(6) for x in BAD_RUNS]
 
         def select_good_runs(goodruns, allruns):
             return [item for item in allruns if not any(badrun in item for badrun in badruns)]
         
+        filelist = getFilelist(defname)
         good_run_list = select_good_runs(badruns, filelist)
 
         good_run_list_xroot = []
@@ -43,3 +40,12 @@ class DataProcessor:
                 np.asarray(ar["timestamp"])[(ar["runNumber"]==run)] = (ar["timestamp", (ar["runNumber"]==run) & (ar["subrunNumber"]==0)])
 
         return ar, arSpills
+
+    def getFilelist(defname):
+        # Get the list of files with full pathnames
+        commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh;"  
+                    "setup mu2efiletools; setup dhtools;"
+                    "samListLocations --defname %s"%defname)
+        filelist = subprocess.check_output(commands, shell=True, universal_newlines=True)
+        filelist = filelist.splitlines()
+        return filelist
