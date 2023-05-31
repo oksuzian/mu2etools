@@ -5,13 +5,13 @@ BAD_RUNS=[42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60
 XROOT = False
 
 class DataProcessor:
-    def __init__(self, defname):
-        self.defname = defname
+    def __init__(self, xroot):
+        self.xroot = xroot
     
-    def getData(self):
-        arg = self.defname
+    def getData(self, defname):
+
         # Execute the shell script with the argument
-        filelist = subprocess.check_output(['./getDataset.sh', arg], universal_newlines=True)
+        filelist = subprocess.check_output(['./getDataset.sh', defname], universal_newlines=True)
         filelist = filelist.splitlines()
 
         # Define bad runs
