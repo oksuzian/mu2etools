@@ -50,3 +50,6 @@ class DataProcessor:
         filelist = subprocess.check_output(commands, shell=True, universal_newlines=True)
         filelist = filelist.splitlines()
         return filelist
+
+    def listBadRun(self):
+        print(BAD_RUNS)
