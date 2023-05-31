@@ -41,7 +41,7 @@ class DataProcessor:
 
         return ar, arSpills
 
-    def getFilelist(defname):
+    def getFilelist(self, defname):
         # Get the list of files with full pathnames
         commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh;"  
                     "setup mu2efiletools; setup dhtools;"
