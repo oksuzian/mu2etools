@@ -12,26 +12,27 @@ class DataProcessor:
         self.fixtimes = fixtimes
 
     def getData(self, defname):
-
         # Define bad runs
         badruns = [str(x).zfill(6) for x in BAD_RUNS]
-
-        def select_good_runs(goodruns, allruns):
-            return [item for item in allruns if not any(badrun in item for badrun in badruns)]
+        # Create filelist with full path in dCache
+        filelist = self.getFilelist(defname)
         
-        filelist = getFilelist(defname)
-        good_run_list = select_good_runs(badruns, filelist)
+        #Remove bad runs from the list
+        def select_good_runs(badruns, filelist):
+            return [item for item in filelist if not any(badrun in item for badrun in badruns)]        
+        filelist = select_good_runs(badruns, filelist)
 
-        good_run_list_xroot = []
-        for root_file in good_run_list:
+        #Optionally, change the filelist to xroot locations
+        good_run_list = []
+        for root_file in filelist:
             if self.xroot:
                 root_file = 'root://fndca1.fnal.gov'+root_file[:5]+'/fnal.gov/usr/'+root_file[6:]
-            good_run_list_xroot.append(root_file)
+            good_run_list.append(root_file)
 
-        file_list_ = ["{}{}".format(i, ":runSummary") for i in good_run_list_xroot]
+        file_list_ = ["{}{}".format(i, ":runSummary") for i in good_run_list]
         ar = uproot.concatenate(file_list_, xrootdsource={"timeout": 720})
 
-        file_list_ = ["{}{}".format(i, ":spills") for i in good_run_list_xroot]
+        file_list_ = ["{}{}".format(i, ":spills") for i in good_run_list]
         arSpills = uproot.concatenate(file_list_, xrootdsource={"timeout": 720})
 
         #Fill all timestamps with subruns!=0 to  timestamps with subruns==0. FIXME
@@ -43,9 +44,9 @@ class DataProcessor:
 
     def getFilelist(self, defname):
         # Get the list of files with full pathnames
-        commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh;"  
-                    "setup mu2efiletools; setup dhtools;"
-                    "samListLocations --defname %s"%defname)
+        commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; "
+                    "setup mu2efiletools; setup dhtools; "
+                    "samListLocations --defname %s" % defname)
         filelist = subprocess.check_output(commands, shell=True, universal_newlines=True)
         filelist = filelist.splitlines()
         return filelist
