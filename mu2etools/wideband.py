@@ -25,7 +25,7 @@ class DataProcessor:
 
         good_run_list_xroot = []
         for root_file in good_run_list:
-            if xroot:
+            if self.xroot:
                 root_file = 'root://fndca1.fnal.gov'+root_file[:5]+'/fnal.gov/usr/'+root_file[6:]
             good_run_list_xroot.append(root_file)
 
@@ -36,7 +36,7 @@ class DataProcessor:
         arSpills = uproot.concatenate(file_list_, xrootdsource={"timeout": 720})
 
         #Fill all timestamps with subruns!=0 to  timestamps with subruns==0. FIXME
-        if fixtime:
+        if self.fixtime:
             for run in ar["runNumber", (ar["subrunNumber"]==0)]:
                 np.asarray(ar["timestamp"])[(ar["runNumber"]==run)] = (ar["timestamp", (ar["runNumber"]==run) & (ar["subrunNumber"]==0)])
 
