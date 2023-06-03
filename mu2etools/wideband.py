@@ -77,7 +77,7 @@ class DataProcessor:
     def listBadRuns(self):
         print(BAD_RUNS)
 
-    def load_modules():
+    def load_modules(self):
         modules_to_load = ['numpy', 'pandas', 'matplotlib.pyplot']
         module_names = modules_to_load
         for module_name in module_names:
