@@ -78,8 +78,12 @@ class DataProcessor:
         print(BAD_RUNS)
 
     def load_modules(self):
+        import importlib
+
         modules_to_load = ['numpy', 'pandas', 'matplotlib.pyplot']
         module_names = modules_to_load
         for module_name in module_names:
             print(module_name)
-            globals()[module_name] = __import__(module_name)
+#            globals()[module_name] = __import__(module_name)                
+            module = importlib.import_module(module_name)
+            globals()[module_name] = module
