@@ -1,17 +1,3 @@
-import subprocess
-import uproot
-import numpy as np
-
-import matplotlib.pyplot as plt
-import pandas as pd
-import mplhep as hep
-import awkward as ak
-from numpy.core.function_base import linspace
-import dask as dd
-from scipy.optimize import curve_fit
-import uncertainties.unumpy as unumpy
-import nbconvert
-
 hep.style.use('ATLAS')  # or ATLAS/LHCb2
 
 NCHAN_FEB = 64
@@ -87,3 +73,35 @@ class DataProcessor:
 #            globals()[module_name] = __import__(module_name)                
             module = importlib.import_module(module_name)
             globals()[module_name] = module
+
+    def plotFits(self, ar, xvar, yvar, febid, minrun):
+
+        df = pd.DataFrame(columns=['slope', 'offset', 'chan', 'feb'])
+        ar_ = ar[ar['runNumber']>minrun] # Select only data after electronics rack was installed
+
+        for idx, feb in enumerate(febid):
+            fig, axes = plt.subplots(nrows=1, ncols=16, figsize=(24, 2), sharey='row')
+            plt.subplots_adjust(wspace=0)
+            axes[0].set_ylabel('SPE | FEB%d'%feb)
+            for chan in range(NCHAN_FEB): # Loop thgough hdmi
+                sipm = chan % 4
+                ax = axes[chan//4]    
+                x = ar_[xvar][:, idx, chan].to_numpy()
+                y = ar_[yvar][:, idx, chan].to_numpy()
+                x=x[y > 0] # Drop bad SPE points 
+                y=y[y > 0] # Drop bad SPE points
+                y=y[x > 0] # Drop bad Temp points
+                x=x[x > 0] # Drop bad Temp points 
+                if len(x) == 0: # Drop dead channels
+                    continue
+
+                linmodel = np.poly1d(np.polyfit(x, y, 1))
+                xline = np.linspace(17, 25, 100)
+                ax.plot(xline, linmodel(xline), 'r--', linewidth=0.5)
+                ax.plot(x,y, '.', linewidth=0.5, markersize=3, label='Ch%d: %.2f'%(chan, linmodel.coeffs[0]))
+                ax.set_xlabel('Temp [C]', fontsize=10)
+                ax.set_xlim(16, 27)
+                ax.legend(prop={'size': 8}, loc='upper right')
+                new_row = {'slope': linmodel.coeffs[0], 'offset': linmodel.coeffs[1], 'chan':chan, 'feb':feb}
+                df.loc[len(df)] = new_row            
+    return df
