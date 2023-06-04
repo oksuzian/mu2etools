@@ -1,13 +1,8 @@
-hep.style.use('ATLAS')  # or ATLAS/LHCb2
-
 NCHAN_FEB = 64
 NCHAN_CMB = 4
 SEC_YEAR=3.154e+7
 MIN_TEMP=18
 MAX_TEMP=21
-
-
-
 BAD_RUNS=[42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 
           55, 56, 57, 58, 59, 60, 61, 62, 64, 67, 68, 69, 
           80, 83, 87, 88, 89, 91, 96, 101, 105, 110, 115, 
