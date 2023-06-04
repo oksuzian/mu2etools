@@ -63,22 +63,9 @@ class DataProcessor:
     def listBadRuns(self):
         print(BAD_RUNS)
 
-    def load_modules(self):
-        import importlib
-
-        modules_to_load = ['numpy', 'pandas', 'matplotlib.pyplot']
-        module_names = modules_to_load
-        for module_name in module_names:
-            print(module_name)
-#            globals()[module_name] = __import__(module_name)                
-            module = importlib.import_module(module_name)
-            globals()[module_name] = module
-
     def plotFits(self, ar, xvar, yvar, febid, minrun):
-
         df = pd.DataFrame(columns=['slope', 'offset', 'chan', 'feb'])
         ar_ = ar[ar['runNumber']>minrun] # Select only data after electronics rack was installed
-
         for idx, feb in enumerate(febid):
             fig, axes = plt.subplots(nrows=1, ncols=16, figsize=(24, 2), sharey='row')
             plt.subplots_adjust(wspace=0)
@@ -104,4 +91,4 @@ class DataProcessor:
                 ax.legend(prop={'size': 8}, loc='upper right')
                 new_row = {'slope': linmodel.coeffs[0], 'offset': linmodel.coeffs[1], 'chan':chan, 'feb':feb}
                 df.loc[len(df)] = new_row            
-    return df
+        return df
