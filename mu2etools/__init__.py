@@ -3,7 +3,6 @@ from .utils import getNormBackground, getNormBackground, getNormBackground
 import subprocess
 import uproot
 import numpy as np
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import mplhep as hep
