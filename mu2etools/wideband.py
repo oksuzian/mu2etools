@@ -86,9 +86,11 @@ class DataProcessor:
             axes[0].set_ylabel('SPE | FEB%d'%feb)
             for chan in range(NCHAN_FEB): # Loop through sipms
                 sipm = chan % 4
-                ax = axes[chan//4]    
-                x = ar_[xvar][:, idx, chan].to_numpy()
-                y = ar_[yvar][:, idx, chan].to_numpy()
+                ax = axes[chan//4]
+                cut = ar_['stddevTemperatures'][:, idx, chan] > 0.01
+
+                x = ar_[xvar, cut][:, idx, chan].to_numpy()
+                y = ar_[yvar, cut][:, idx, chan].to_numpy()
 
                 if np.any(x<0.1) or np.any(y<0.1):
                     print(feb, chan, x, y)
