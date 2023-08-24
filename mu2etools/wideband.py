@@ -28,36 +28,29 @@ class DataProcessor:
         self.filter_name = filter_name
 
 
-    def getData(self, defname, runlist=BAD_RUNS):
+    def getData(self, defname):
         # Create filelist with full path in dCache
         filelist = self.getFilelist(defname)
-
-        #Optionally, change the filelist to xroot locations
-        good_run_list = []
-        for root_file in filelist:
-            if self.usexroot:
-                root_file = 'root://fndcadoor.fnal.gov'+root_file[:5]+'/fnal.gov/usr/'+root_file[6:]
-            good_run_list.append(root_file)
-
-        file_list_ = ["{}{}".format(i, ":%s"%self.treename) for i in good_run_list]
+        file_list_ = ["{}{}".format(i, ":%s"%self.treename) for i in filelist]
         ar = uproot.concatenate(file_list_, xrootdsource={"timeout": 720}, filter_name=self.filter_name)
-
-        file_list_ = ["{}{}".format(i, ":spills") for i in good_run_list]
-        arSpills = ar
 
         #Fill all timestamps with subruns!=0 to  timestamps with subruns==0. FIXME
         if self.fixtimes:
             for run in ar["runNumber", (ar["subrunNumber"]==0)]:
                 np.asarray(ar["timestamp"])[(ar["runNumber"]==run)] = (ar["timestamp", (ar["runNumber"]==run) & (ar["subrunNumber"]==0)])
 
-        return ar, arSpills
+        return ar
 
     def getFilelist(self, defname):
         # Get the list of files with full pathnames
-        commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; "
-                    "setup mu2efiletools; setup dhtools; "
-                    "samListLocations --defname %s" % defname)
-        filelist = subprocess.check_output(commands, shell=True, universal_newlines=True)
+	commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; "
+            	    "setup mdh; setup dhtools; ")
+	if self.usexroot:
+    	    commands = commands + "samweb list-definition-files %s | mdh file-url -s root -" % defname
+	else:
+    	    commands = commands + "samweb list-definition-files %s | mdh file-url -" % defname
+
+	filelist = subprocess.check_output(commands, shell=True, universal_newlines=True)
         filelist = filelist.splitlines()
 
         # Prepend zeros
