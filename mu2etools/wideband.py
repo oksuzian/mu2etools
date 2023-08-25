@@ -46,9 +46,9 @@ class DataProcessor:
         commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; "
                     "setup mdh; setup dhtools; ")
         if self.usexroot:
-            commands = commands + "samweb list-definition-files %s | mdh file-url -s root -" % defname
+            commands = commands + "samweb list-definition-files %s | sort | mdh file-url -s root -" % defname
         else:
-            commands = commands + "samweb list-definition-files %s | mdh file-url -" % defname
+            commands = commands + "samweb list-definition-files %s | sort | mdh file-url -" % defname
 
         filelist = subprocess.check_output(commands, shell=True, universal_newlines=True)
         filelist = filelist.splitlines()
