@@ -69,36 +69,3 @@ class DataProcessor:
     def listBadRuns(self):
         print(BAD_RUNS)
 
-    def plotFits(self, ar, xvar, yvar, febid, minrun, nofit=False, debug=False):
-        np.set_printoptions(precision=1)
-        df = pd.DataFrame(columns=['slope', 'offset', 'chan', 'feb'])
-        ar_ = ar[ar['runNumber']>minrun] # Select only data after electronics rack was installed
-        for idx, feb in enumerate(febid):
-            fig, axes = plt.subplots(nrows=1, ncols=16, figsize=(24, 2), sharey='row')
-            plt.subplots_adjust(wspace=0)
-            axes[0].set_ylabel('SPE | FEB%d'%feb)
-            for chan in range(NCHAN_FEB): # Loop through sipms
-                sipm = chan % 4
-                ax = axes[chan//4]
-                cut = ar_['stddevTemperatures'][:, idx, chan] > 0.01
-
-                x = ar_[xvar, cut][:, idx, chan].to_numpy()
-                y = ar_[yvar, cut][:, idx, chan].to_numpy()
-
-                if np.any(x<0.1) or np.any(y<0.1):
-                    print(feb, chan, x, y)
-                    continue
-                if debug:
-                    print(feb, chan, x, y)
-
-                linmodel = np.poly1d(np.polyfit(x, y, 1))
-                xline = np.linspace(17, 25, 100)
-                ax.plot(xline, linmodel(xline), 'r--', linewidth=0.5)
-                ax.plot(x,y, '.--', linewidth=0.5, markersize=3, label='Ch%d: %.2f'%(chan, linmodel.coeffs[0]))
-                ax.set_xlabel('Temp [C]', fontsize=10)
-                ax.set_xlim(16, 27)
-                ax.legend(prop={'size': 8}, loc='upper right')
-                new_row = {'slope': linmodel.coeffs[0], 'offset': linmodel.coeffs[1], 'chan':chan, 'feb':feb}
-                df.loc[len(df)] = new_row
-
-        return df
