@@ -43,14 +43,14 @@ class DataProcessor:
 
     def getFilelist(self, defname):
         # Get the list of files with full pathnames
-	commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; "
-            	    "setup mdh; setup dhtools; ")
-	if self.usexroot:
-    	    commands = commands + "samweb list-definition-files %s | mdh file-url -s root -" % defname
-	else:
-    	    commands = commands + "samweb list-definition-files %s | mdh file-url -" % defname
+        commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; "
+                    "setup mdh; setup dhtools; ")
+        if self.usexroot:
+            commands = commands + "samweb list-definition-files %s | mdh file-url -s root -" % defname
+        else:
+            commands = commands + "samweb list-definition-files %s | mdh file-url -" % defname
 
-	filelist = subprocess.check_output(commands, shell=True, universal_newlines=True)
+        filelist = subprocess.check_output(commands, shell=True, universal_newlines=True)
         filelist = filelist.splitlines()
 
         # Prepend zeros
