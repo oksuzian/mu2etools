@@ -18,7 +18,7 @@ import awkward as ak
 import matplotlib.pyplot as plt
 
 class DataProcessor:
-    def __init__(self, usexroot=False, fixtimes=True, runlist=BAD_RUNS, userunlist=True, remove=True, treename="runSummary", filter_name="*"):
+    def __init__(self, usexroot=False, fixtimes=True, runlist=BAD_RUNS, userunlist=True, remove=True, treename="runSummary", filter_name="*", debug=False):
         self.usexroot = usexroot
         self.runlist = runlist
         self.fixtimes = fixtimes
@@ -26,12 +26,15 @@ class DataProcessor:
         self.remove = remove
         self.treename = treename
         self.filter_name = filter_name
+        self.debug = debug
 
 
     def getData(self, defname):
         # Create filelist with full path in dCache
         filelist = self.getFilelist(defname)
         file_list_ = ["{}{}".format(i, ":%s"%self.treename) for i in filelist]
+        if self.debug:
+            print(file_list_)
         ar = uproot.concatenate(file_list_, xrootdsource={"timeout": 720}, filter_name=self.filter_name)
 
         #Fill all timestamps with subruns!=0 to  timestamps with subruns==0. FIXME
