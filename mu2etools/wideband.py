@@ -41,7 +41,6 @@ class DataProcessor:
         if self.fixtimes:
             for run in ar["runNumber", (ar["subrunNumber"]==0)]:
                 np.asarray(ar["timestamp"])[(ar["runNumber"]==run)] = (ar["timestamp", (ar["runNumber"]==run) & (ar["subrunNumber"]==0)])
-
         return ar
 
     def getFilelist(self, defname):
