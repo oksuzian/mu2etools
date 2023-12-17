@@ -50,10 +50,12 @@ class DataProcessor:
                     "setup mdh; setup dhtools; setup mu2efiletools")
         if self.usexroot:
 #            commands = commands + "samweb list-definition-files %s | sort | mdh print-url -s root -" % defname
-            commands = commands + "mu2eDatasetFileList %s | xargs -I{} basename {} | mdh print-url -s root -" % defname
+            commands = commands + "samweb list-files 'defname: %s with availability anylocation' | sort | mdh print-url -s root -" % defname
+#            commands = commands + "mu2eDatasetFileList %s | xargs -I{} basename {} | mdh print-url -s root -" % defname
         else:
 #            commands = commands + "samweb list-definition-files %s | sort | mdh print-url -" % defname
-            commands = commands + "mu2eDatasetFileList %s " % defname
+            commands = commands + "samweb list-files 'defname: %s with availability anylocation' | sort | mdh print-url -" % defname
+#            commands = commands + "mu2eDatasetFileList %s " % defname
 
         filelist = subprocess.check_output(commands, shell=True, universal_newlines=True)
         filelist = filelist.splitlines()
