@@ -32,11 +32,15 @@ class DataProcessor:
     def getData(self, defname):
         # Create filelist with full path in dCache
         filelist = self.getFilelist(defname)
-        file_list_ = ["{}{}".format(i, ":%s"%self.treename) for i in filelist]
         if self.debug:
-            print(file_list_)
-        ar = uproot.concatenate(file_list_, xrootdsource={"timeout": 720}, filter_name=self.filter_name)
-
+            print(filelist)
+        ar_skim_list = []
+        for idx, filename in enumerate(filelist):
+            percent_complete = (idx + 1)/len(filelist) * 100
+            print("\rProcessing file: %s - %.1f%% complete" % (filename, percent_complete), end='', flush=True)
+            file = self.openFile(filename)
+            ar_skim_list.append(file.arrays())
+        ar = ak.concatenate(ar_skim_list, axis=0)
         #Fill all timestamps with subruns!=0 to  timestamps with subruns==0. FIXME
         if self.fixtimes:
             for run in ar["runNumber", (ar["subrunNumber"]==0)]:
@@ -44,102 +48,92 @@ class DataProcessor:
         return ar
     
     def openFile(self, filename):
-        for i in range(0,100):
+        # Try to open a file 10 times
+        for i in range(0,10):
             while True:
                 try:
-                    file = uproot.open(filename)
+                    commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; muse setup ops;")
+                    commands = commands + "echo %s | mdh print-url -s root -" % filename
+                    filename = subprocess.check_output(commands, shell=True, universal_newlines=True)
+                    file = uproot.open("%s:%s"%(filename, self.treename))
                     return file
                 except OSError as e:
-                    print("Exception timeout opening file: Retrying...%d"%i)
+                    print("Exception timeout opening file with xroot: Retrying localy: %s"%filename)                    
+                    commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh;"
+                    "muse setup ops;")
+                    commands = commands + "echo %s | mdh copy-file -s tape -l local -" % filename
+                    subprocess.check_output(commands, shell=True, universal_newlines=True)
+                    file = uproot.open("%s:%s"%(filename, self.treename))
+                    return file                
                     continue
                 break
 
     
-    def getEffData(self, defname, nfiles=10000, data_type=-1, timeout=7200, step_size="10MB", keep_trig=False):
+    def getEffData(self, defname, varlist, nfiles=10000, timeout=7200, step_size="10MB"):
         # Create filelist with full path in dCache
         filelist = self.getFilelist(defname)
-        file_list_ = ["{}{}".format(i, ":%s"%self.treename) for i in filelist]
-        if self.debug:
-            print(file_list_)
+#        file_list_ = ["{}{}".format(i, ":%s"%self.treename) for i in filelist]
+#        if self.debug:
+#            print(file_list_)
             
         ar_skim_list = []
-        for idx, filename in enumerate(file_list_[0:nfiles]):
-            if idx%25 == 0:
-                print("Processing file: %s"%filename)
-            file = self.openFile(filename)
-            ar_skim_list.append(self.processFile(file, data_type, timeout, step_size, keep_trig))
-        ar_skim = ak.concatenate(ar_skim_list, axis=0)
-        # Number of layer hits in the test module
-        ar_skim['nTestHits'] = ak.sum(ar_skim['PEsTestLayers'] > 10, axis=-1)
-        # Chi2NDF only if denominator if > 0
-        ar_skim['trackChi2NDF'] = ak.where(ar_skim['trackPoints'] > 2, ar_skim['trackChi2'] / (ar_skim['trackPoints'] - 2), -999)
-        return ar_skim
-            
-    def processFile(self, file, data_type=-1, timeout=7200, step_size="10MB", keep_trig=False):
-        
-        #List of variable to export to a skimmed array
-        varlist=['spillNumber', 'eventNumber','runNumber', 'subrunNumber',
-                 'trackPEs', 'trackPoints', 'trackChi2', 'trackIntercept', 'trackSlope']
+        for idx, filename in enumerate(filelist[0:nfiles]):
+            percent_complete = (idx + 1) / len(filelist) * 100
+            print("\rProcessing file: %s - %.1f%% complete" % (filename, percent_complete), end='', flush=True)
+            ar_skim_list.append(self.processFile(filename, varlist, timeout, step_size))
+        ar = ak.concatenate(ar_skim_list, axis=0)
+        return ar
 
+    def processBatch(self, ar):
+        
         all_layers = np.arange(0,16) 
         test_layers = np.arange(2,6) # Test layers are 2 through 6
         trig_layers = all_layers[~np.isin(all_layers, test_layers)]
-        varlist.extend(['nTrigHits', 'PEsTestLayers', 'dataType'])
-        if keep_trig:
-            varlist.extend(['PEsTrigLayers'])
+        
+        # Set PEs to zero for aging and quad-counters
+        ak.to_numpy(ar['PEs'])[:, 0, 0:8] = 0
+        ak.to_numpy(ar['PEs'])[:, 3, 0:8] = 0
+        ak.to_numpy(ar['PEs'])[:, 7, 0:8] = 0
+        # Filter out hits below 5PE
+        ar_trig_filt = ak.where(ar['PEs'] >= 5, ar['PEs'], 0)
+        # Calculate PEs for even and odd layers
+        PEs_even_layers = ak.sum(ar_trig_filt[:, :, 0:32], axis=-1).to_numpy()
+        PEs_odd_layers = ak.sum(ar_trig_filt[:, :, 32:64], axis=-1).to_numpy()        
+        # Interleave the elements from even and odd arrays
+        PEs_interleaved = np.concatenate((PEs_even_layers[:, :, np.newaxis], PEs_odd_layers[:, :, np.newaxis]), axis=2)
+        # Reshape the interleaved array to match the desired shape
+        PEs_stacked = PEs_interleaved.reshape(-1, 16)        
+        # Add PEs for even and odd layers to the original array
+        ar['PEsAllLayer'] = PEs_stacked
+        # Count the number of triggered layers
+        ar['nTrigHits'] = ak.sum(ar['PEsAllLayer'][:, trig_layers] > 10, axis=-1)
+        # Filter out events with more than 10 triggered layers        
+        ar = ar[ar['nTrigHits'] > 8]
+        # Extract PEsTestLayers and PEsTrigLayers
+        ar['PEsTestLayers'] = ar['PEsAllLayer'][:, test_layers]
+        ar['PEsTrigLayers'] = ar['PEsAllLayer'][:, trig_layers]
 
-        ar_skim_list = []            
-        for i in range(0,100):
-            while True:
-                try:
-                    for ar in uproot.iterate(file, step_size=step_size, 
-                                           filter_name=['PEs', varlist, 'coincidencePosX'], 
-                                           library='ak', options={"timeout": timeout}):
-                        # Set PEs to zero for aging and quad-counters
-                        ak.to_numpy(ar['PEs'])[:,0,0:8] = 0
-                        ak.to_numpy(ar['PEs'])[:,3,0:8] = 0
-                        ak.to_numpy(ar['PEs'])[:,7,0:8] = 0
-                        # Filter out hits below 5PE
-                        ar_trig_filt = ak.where(ar['PEs'] >= 5, ar['PEs'], 0)
-                        # Calculate PEs for even and odd layers
-                        PEs_even_layers = ak.sum(ar_trig_filt[:, :, 0:32], axis=-1).to_numpy()
-                        PEs_odd_layers = ak.sum(ar_trig_filt[:, :, 32:64], axis=-1).to_numpy()        
-                        # Interleave the elements from even and odd arrays
-                        PEs_interleaved = np.concatenate((PEs_even_layers[:, :, np.newaxis], PEs_odd_layers[:, :, np.newaxis]), axis=2)
-                        # Reshape the interleaved array to match the desired shape
-                        PEs_stacked = PEs_interleaved.reshape(-1, 16)        
-                        # Add PEs for even and odd layers to the original array
-                        ar['PEsAllLayer'] = PEs_stacked
-                        # Count the number of triggered layers
-                        ar['nTrigHits'] = ak.sum(ar['PEsAllLayer'][:, trig_layers] > 10, axis=-1)
-                        # Filter out events with more than 10 triggered layers        
-                        ar = ar[ar['nTrigHits'] > 8]
-                        # Extract only PEsTestLayers to save memory
-                        ar['PEsTestLayers'] = ar['PEsAllLayer'][:, test_layers]
-                        ar['PEsTrigLayers'] = ar['PEsAllLayer'][:, trig_layers]
-                        ar['dataType'] = data_type        
-
-                        if data_type > 0: # means MC samples is provided
-                            ar['trackIntercept'] = ar['trackIntercept'] - 20950.0
-                            # Mimic the trigger paddles
-                            trigPad_cut = (abs(ar["coincidencePosX"][:,1]+5604) < 50) & (abs(ar["coincidencePosX"][:,4] + 5604) < 50)
-                            ar = ar[trigPad_cut]
-                        return ar[varlist]
-
-                except OSError as e:
-                    print("Exception timeout opening batch: Retrying...%d"%i)
-                    continue
-                break
-
+        return ar 
+    
+    def processFile(self, filename, varlist, timeout=7200, step_size="10MB"):
+        ar_skim_list = []
+        print("filename: %s"%filename)
+        file = self.openFile(filename)
+        for ar in uproot.iterate(file, step_size=step_size, 
+                               filter_name=['PEs', varlist], 
+                               library='ak', options={"timeout": timeout}):
+            ar = self.processBatch(ar)
+            ar_skim_list.append(ar[varlist])
             
-            
+        ar_skim = ak.concatenate(ar_skim_list, axis=0)            
+        return ar_skim
         
     def getFilelist(self, defname):
         # Get the list of files with full pathnames
         commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; "
-                    "setup mdh; setup dhtools;")
+                    "muse setup ops;")
         if self.usexroot:
-            commands = commands + "samweb list-files 'defname: %s with availability anylocation' | sort | mdh print-url -s root -" % defname
+            commands = commands + "samweb list-files 'defname: %s with availability anylocation' | sort " % defname
         else:
             commands = commands + "samweb list-files 'defname: %s with availability anylocation' | sort | mdh print-url -" % defname
 
