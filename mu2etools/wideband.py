@@ -39,7 +39,7 @@ class DataProcessor:
             percent_complete = (idx + 1)/len(filelist) * 100
             print("\rProcessing file: %s - %.1f%% complete" % (filename, percent_complete), end='', flush=True)
             file = self.openFile(filename)
-            ar_skim_list.append(file.arrays())
+            ar_skim_list.append(file.arrays(filter_name=self.filter_name))
         ar = ak.concatenate(ar_skim_list, axis=0)
         #Fill all timestamps with subruns!=0 to  timestamps with subruns==0. FIXME
         if self.fixtimes:
@@ -70,11 +70,7 @@ class DataProcessor:
 
     
     def getEffData(self, defname, varlist, nfiles=10000, timeout=7200, step_size="10MB"):
-        # Create filelist with full path in dCache
         filelist = self.getFilelist(defname)
-#        file_list_ = ["{}{}".format(i, ":%s"%self.treename) for i in filelist]
-#        if self.debug:
-#            print(file_list_)
             
         ar_skim_list = []
         for idx, filename in enumerate(filelist[0:nfiles]):
@@ -117,7 +113,6 @@ class DataProcessor:
     
     def processFile(self, filename, varlist, timeout=7200, step_size="10MB"):
         ar_skim_list = []
-        print("filename: %s"%filename)
         file = self.openFile(filename)
         for ar in uproot.iterate(file, step_size=step_size, 
                                filter_name=['PEs', varlist], 
@@ -148,9 +143,10 @@ class DataProcessor:
                 return [item for item in filelist if not any(run in item for run in runs)]
             else:
                 return [item for item in filelist if any(run in item for run in runs)]
-
+            
         if self.userunlist:        
             filelist = select_good_runs(runs, filelist)
+            
         return filelist
 
     def listBadRuns(self):
