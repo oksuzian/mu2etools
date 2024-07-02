@@ -18,8 +18,7 @@ import awkward as ak
 import matplotlib.pyplot as plt
 
 class DataProcessor:
-    def __init__(self, usexroot=False, fixtimes=True, runlist=BAD_RUNS, userunlist=True, remove=True, treename="runSummary", filter_name="*", debug=False):
-        self.usexroot = usexroot
+    def __init__(self, fixtimes=True, runlist=BAD_RUNS, userunlist=True, remove=True, treename="runSummary", filter_name="*", debug=False):
         self.runlist = runlist
         self.fixtimes = fixtimes
         self.userunlist = userunlist
@@ -123,14 +122,14 @@ class DataProcessor:
         ar_skim = ak.concatenate(ar_skim_list, axis=0)            
         return ar_skim
         
-    def getFilelist(self, defname):
+    def getFilelist(self, defname, root_schema=False):
         # Get the list of files with full pathnames
         commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; "
                     "muse setup ops;")
-        if self.usexroot:
-            commands = commands + "samweb list-files 'defname: %s with availability anylocation' | sort " % defname
+        if root_schema:
+            commands = commands + "samweb list-files 'defname: %s with availability anylocation' | sort | mdh print-url -s root -" % defname
         else:
-            commands = commands + "samweb list-files 'defname: %s with availability anylocation' | sort | mdh print-url -" % defname
+            commands = commands + "samweb list-files 'defname: %s with availability anylocation' | sort " % defname
 
         filelist = subprocess.check_output(commands, shell=True, universal_newlines=True)
         filelist = filelist.splitlines()
