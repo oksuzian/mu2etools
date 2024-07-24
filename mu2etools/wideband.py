@@ -18,7 +18,7 @@ import awkward as ak
 import matplotlib.pyplot as plt
 
 class DataProcessor:
-    def __init__(self, fixtimes=True, runlist=BAD_RUNS, userunlist=True, remove=True, treename="runSummary", filter_name="*", debug=False):
+    def __init__(self, fixtimes=True, runlist=BAD_RUNS, userunlist=True, remove=True, treename="runSummary", filter_name="*", debug=False, filter_func=None):
         self.runlist = runlist
         self.fixtimes = fixtimes
         self.userunlist = userunlist
@@ -26,8 +26,11 @@ class DataProcessor:
         self.treename = treename
         self.filter_name = filter_name
         self.debug = debug
+        self.filter_func = filter_func or self.defaultFilter
 
-
+    def defaultFilter(self, arr):
+        return arr
+        
     def getData(self, defname):
         # Create filelist with full path in dCache
         filelist = self.getFilelist(defname)
@@ -38,7 +41,10 @@ class DataProcessor:
             percent_complete = (idx + 1)/len(filelist) * 100
             print("\rProcessing file: %s - %.1f%% complete" % (filename, percent_complete), end='', flush=True)
             file = self.openFile(filename)
-            ar_skim_list.append(file.arrays(filter_name=self.filter_name))
+            ar = file[self.treename].arrays(filter_name=self.filter_name)
+            ar_filtered = self.filter_func(ar)
+            ar_skim_list.append(ar_filtered)
+            
         ar = ak.concatenate(ar_skim_list, axis=0)
         #Fill all timestamps with subruns!=0 to  timestamps with subruns==0. FIXME
         if self.fixtimes:
@@ -54,7 +60,7 @@ class DataProcessor:
                     commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; muse setup ops;")
                     commands = commands + "echo %s | mdh print-url -s root -" % filename
                     filename = subprocess.check_output(commands, shell=True, universal_newlines=True)
-                    file = uproot.open("%s:%s"%(filename, self.treename))
+                    file = uproot.open("%s"%filename)
                     return file
                 except OSError as e:
                     print("Exception timeout opening file with xroot: Retrying localy: %s"%filename)                    
@@ -62,7 +68,7 @@ class DataProcessor:
                     "muse setup ops;")
                     commands = commands + "echo %s | mdh copy-file -s tape -l local -" % filename
                     subprocess.check_output(commands, shell=True, universal_newlines=True)
-                    file = uproot.open("%s:%s"%(filename, self.treename))
+                    file = uproot.open("%s"%filename)
                     return file                
                     continue
                 break
