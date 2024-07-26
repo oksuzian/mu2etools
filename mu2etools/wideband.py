@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import awkward as ak
 import matplotlib.pyplot as plt
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class DataProcessor:
     def __init__(self, fixtimes=True, runlist=BAD_RUNS, userunlist=True, remove=True, treename="runSummary", filter_name="*", debug=False, filter_func=None):
@@ -36,20 +37,36 @@ class DataProcessor:
         filelist = self.getFilelist(defname)
         if self.debug:
             print(filelist)
-        ar_skim_list = []
-        for idx, filename in enumerate(filelist):
-            percent_complete = (idx + 1)/len(filelist) * 100
-            print("\rProcessing file: %s - %.1f%% complete" % (filename, percent_complete), end='', flush=True)
+        
+        def process_file(filename):
             file = self.openFile(filename)
             ar = file[self.treename].arrays(filter_name=self.filter_name)
-            ar_filtered = self.filter_func(ar)
-            ar_skim_list.append(ar_filtered)
+            return self.filter_func(ar)
+    
+        ar_skim_list = []
+        
+        with ThreadPoolExecutor() as executor:
+            futures = {executor.submit(process_file, filename): filename for filename in filelist}
             
+            for idx, future in enumerate(as_completed(futures)):
+                filename = futures[future]
+                try:
+                    ar_filtered = future.result()
+                    ar_skim_list.append(ar_filtered)
+                    percent_complete = (idx + 1) / len(filelist) * 100
+                    print("\rProcessing file: %s - %.1f%% complete" % (filename, percent_complete), end='', flush=True)
+                except Exception as e:
+                    print(f"Error processing {filename}: {e}")
+    
         ar = ak.concatenate(ar_skim_list, axis=0)
-        #Fill all timestamps with subruns!=0 to  timestamps with subruns==0. FIXME
+        
+        # Fill all timestamps with subruns != 0 to timestamps with subruns == 0
         if self.fixtimes:
-            for run in ar["runNumber", (ar["subrunNumber"]==0)]:
-                np.asarray(ar["timestamp"])[(ar["runNumber"]==run)] = (ar["timestamp", (ar["runNumber"]==run) & (ar["subrunNumber"]==0)])
+            for run in ar["runNumber", (ar["subrunNumber"] == 0)]:
+                np.asarray(ar["timestamp"])[(ar["runNumber"] == run)] = (
+                    ar["timestamp", (ar["runNumber"] == run) & (ar["subrunNumber"] == 0)]
+                )
+        
         return ar
     
     def openFile(self, filename):
