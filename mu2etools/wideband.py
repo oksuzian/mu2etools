@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class DataProcessor:
-    def __init__(self, fixtimes=True, runlist=BAD_RUNS, userunlist=True, remove=True, treename="runSummary", filter_name="*", debug=False, filter_func=None):
+    def __init__(self, fixtimes=True, runlist=BAD_RUNS, userunlist=True, remove=True, treename="runSummary", filter_name="*", debug=False, filter_func=None, filter_args=()):
         self.runlist = runlist
         self.fixtimes = fixtimes
         self.userunlist = userunlist
@@ -28,24 +28,37 @@ class DataProcessor:
         self.filter_name = filter_name
         self.debug = debug
         self.filter_func = filter_func or self.defaultFilter
+        self.filter_args = filter_args
 
     def defaultFilter(self, arr):
         return arr
         
-    def getData(self, defname):
+    def getData(self, defname, max_workers=10, step_size="10MB", nfiles=-1):
         # Create filelist with full path in dCache
         filelist = self.getFilelist(defname)
+        if nfiles>0:
+            filelist=filelist[:nfiles]        
         if self.debug:
             print(filelist)
-        
+
         def process_file(filename):
-            file = self.openFile(filename)
-            ar = file[self.treename].arrays(filter_name=self.filter_name)
-            return self.filter_func(ar)
+            # Attempt to open the file with retries
+            try:
+                file = self.openFile(filename)
+                # Load the array in chunks using step_size to limit memory use
+                ar_chunks = []
+                for chunk in uproot.iterate(file[self.treename], step_size=step_size, filter_name=self.filter_name, library="ak"):
+                    filtered_chunk = self.filter_func(chunk, *self.filter_args)                    
+                    ar_chunks.append(filtered_chunk)
+                # Concatenate chunks for a single file
+                return ak.concatenate(ar_chunks) if ar_chunks else None
+            except Exception as e:
+                print(f"Error processing {filename}: {e}")
+                return None
     
         ar_skim_list = []
         
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {executor.submit(process_file, filename): filename for filename in filelist}
             
             for idx, future in enumerate(as_completed(futures)):
@@ -89,61 +102,6 @@ class DataProcessor:
                     return file                
                     continue
                 break
-
-    
-    def getEffData(self, defname, varlist, nfiles=10000, timeout=7200, step_size="10MB"):
-        filelist = self.getFilelist(defname)
-            
-        ar_skim_list = []
-        for idx, filename in enumerate(filelist[0:nfiles]):
-            percent_complete = (idx + 1) / len(filelist) * 100
-            print("\rProcessing file: %s - %.1f%% complete" % (filename, percent_complete), end='', flush=True)
-            ar_skim_list.append(self.processFile(filename, varlist, timeout, step_size))
-        ar = ak.concatenate(ar_skim_list, axis=0)
-        return ar
-
-    def processBatch(self, ar):
-        
-        all_layers = np.arange(0,16) 
-        test_layers = np.arange(2,6) # Test layers are 2 through 6
-        trig_layers = all_layers[~np.isin(all_layers, test_layers)]
-        
-        # Set PEs to zero for aging and quad-counters
-        ak.to_numpy(ar['PEs'])[:, 0, 0:8] = 0
-        ak.to_numpy(ar['PEs'])[:, 3, 0:8] = 0
-        ak.to_numpy(ar['PEs'])[:, 7, 0:8] = 0
-        # Filter out hits below 5PE
-        ar_trig_filt = ak.where(ar['PEs'] >= 5, ar['PEs'], 0)
-        # Calculate PEs for even and odd layers
-        PEs_even_layers = ak.sum(ar_trig_filt[:, :, 0:32], axis=-1).to_numpy()
-        PEs_odd_layers = ak.sum(ar_trig_filt[:, :, 32:64], axis=-1).to_numpy()        
-        # Interleave the elements from even and odd arrays
-        PEs_interleaved = np.concatenate((PEs_even_layers[:, :, np.newaxis], PEs_odd_layers[:, :, np.newaxis]), axis=2)
-        # Reshape the interleaved array to match the desired shape
-        PEs_stacked = PEs_interleaved.reshape(-1, 16)        
-        # Add PEs for even and odd layers to the original array
-        ar['PEsAllLayer'] = PEs_stacked
-        # Count the number of triggered layers
-        ar['nTrigHits'] = ak.sum(ar['PEsAllLayer'][:, trig_layers] > 10, axis=-1)
-        # Filter out events with more than 10 triggered layers        
-        ar = ar[ar['nTrigHits'] > 8]
-        # Extract PEsTestLayers and PEsTrigLayers
-        ar['PEsTestLayers'] = ar['PEsAllLayer'][:, test_layers]
-        ar['PEsTrigLayers'] = ar['PEsAllLayer'][:, trig_layers]
-
-        return ar 
-    
-    def processFile(self, filename, varlist, timeout=7200, step_size="10MB"):
-        ar_skim_list = []
-        file = self.openFile(filename)
-        for ar in uproot.iterate(file, step_size=step_size, 
-                               filter_name=['PEs', varlist], 
-                               library='ak', options={"timeout": timeout}):
-            ar = self.processBatch(ar)
-            ar_skim_list.append(ar[varlist])
-            
-        ar_skim = ak.concatenate(ar_skim_list, axis=0)            
-        return ar_skim
         
     def getFilelist(self, defname, root_schema=False):
         # Get the list of files with full pathnames
