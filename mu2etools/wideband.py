@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class DataProcessor:
-    def __init__(self, fixtimes=True, runlist=BAD_RUNS, userunlist=True, remove=True, treename="runSummary", filter_name="*", debug=False, filter_func=None, filter_args=()):
+    def __init__(self, fixtimes=True, runlist=BAD_RUNS, userunlist=True, remove=True, treename="runSummary", filter_name="*", debug=False, filter_func=None, filter_args=(), infile_location='tape'):
         self.runlist = runlist
         self.fixtimes = fixtimes
         self.userunlist = userunlist
@@ -29,6 +29,7 @@ class DataProcessor:
         self.debug = debug
         self.filter_func = filter_func or self.defaultFilter
         self.filter_args = filter_args
+        self.infile_location = infile_location
 
     def defaultFilter(self, arr):
         return arr
@@ -88,7 +89,7 @@ class DataProcessor:
             while True:
                 try:
                     commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; muse setup ops;")
-                    commands = commands + "echo %s | mdh print-url -s root -" % filename
+                    commands = commands + "mdh print-url -s root -l %s %s" % (self.infile_location, filename)
                     filename = subprocess.check_output(commands, shell=True, universal_newlines=True)
                     file = uproot.open("%s"%filename)
                     return file
@@ -96,7 +97,7 @@ class DataProcessor:
                     print("Exception timeout opening file with xroot: Retrying localy: %s"%filename)                    
                     commands = ("source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh;"
                     "muse setup ops;")
-                    commands = commands + "echo %s | mdh copy-file -s tape -l local -" % filename
+                    commands = commands + "mdh copy-file -s %s -l local %s" % (self.infile_location, filename)
                     subprocess.check_output(commands, shell=True, universal_newlines=True)
                     file = uproot.open("%s"%filename)
                     return file                
